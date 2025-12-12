@@ -7,7 +7,15 @@ import { stringify } from 'yaml';
 import { resolve } from 'path';
 
 const ConfigureApp = () => {
-	const [step, setStep] = useState(0);
+	const STEP_WELCOME = 0;
+	const STEP_EMAIL = 1;
+	const STEP_NAME = 2;
+	const STEP_MESSENGER = 3;
+	const STEP_LOCATION = 4;
+	const STEP_GEOIP2_PATH = 5;
+	const STEP_COMPLETE = 6;
+
+	const [step, setStep] = useState(STEP_WELCOME);
 	const [config, setConfig] = useState({
 		senderEmail: '',
 		senderName: '',
@@ -57,12 +65,13 @@ const ConfigureApp = () => {
 			writeFileSync(outputPath, yaml, 'utf8');
 			return outputPath;
 		} catch (error) {
+			console.error('Error saving configuration:', error.message);
 			return null;
 		}
 	};
 
 	// Step 0: Welcome
-	if (step === 0) {
+	if (step === STEP_WELCOME) {
 		return (
 			<Box flexDirection="column" padding={1}>
 				<Box marginBottom={1}>
@@ -88,7 +97,7 @@ const ConfigureApp = () => {
 	}
 
 	// Step 1: Sender Email
-	if (step === 1) {
+	if (step === STEP_EMAIL) {
 		return (
 			<Box flexDirection="column" padding={1}>
 				<Box marginBottom={1}>
@@ -111,7 +120,7 @@ const ConfigureApp = () => {
 	}
 
 	// Step 2: Sender Name
-	if (step === 2) {
+	if (step === STEP_NAME) {
 		return (
 			<Box flexDirection="column" padding={1}>
 				<Box marginBottom={1}>
@@ -134,7 +143,7 @@ const ConfigureApp = () => {
 	}
 
 	// Step 3: Messenger Integration
-	if (step === 3) {
+	if (step === STEP_MESSENGER) {
 		const items = [
 			{ label: 'Yes - Enable Symfony Messenger integration', value: true },
 			{ label: 'No - Process synchronously', value: false }
@@ -160,7 +169,7 @@ const ConfigureApp = () => {
 	}
 
 	// Step 4: Location Provider
-	if (step === 4) {
+	if (step === STEP_LOCATION) {
 		const items = [
 			{ label: 'None - No geolocation', value: 'none' },
 			{ label: 'ipApi - Use IP API (free tier available)', value: 'ipApi' },
@@ -182,7 +191,7 @@ const ConfigureApp = () => {
 						if (item.value === 'geoip2') {
 							nextStep();
 						} else {
-							setStep(5); // Skip GeoIP2 path step
+							setStep(STEP_COMPLETE); // Skip GeoIP2 path step
 						}
 					}}
 				/>
@@ -191,7 +200,7 @@ const ConfigureApp = () => {
 	}
 
 	// Step 5: GeoIP2 Database Path (only if geoip2 selected)
-	if (step === 5 && config.locationProvider === 'geoip2') {
+	if (step === STEP_GEOIP2_PATH && config.locationProvider === 'geoip2') {
 		return (
 			<Box flexDirection="column" padding={1}>
 				<Box marginBottom={1}>
@@ -205,7 +214,7 @@ const ConfigureApp = () => {
 					<TextInput
 						value={config.geoip2Path}
 						onChange={(value) => updateConfig('geoip2Path', value)}
-						onSubmit={() => setStep(6)}
+						onSubmit={() => setStep(STEP_COMPLETE)}
 						placeholder="%kernel.project_dir%/var/GeoLite2-City.mmdb"
 					/>
 				</Box>
@@ -215,7 +224,7 @@ const ConfigureApp = () => {
 
 	// Final Step: Summary and Save
 	const yaml = generateYaml();
-	const savedPath = step === 6 ? saveConfig() : null;
+	const savedPath = step >= STEP_COMPLETE ? saveConfig() : null;
 
 	return (
 		<Box flexDirection="column" padding={1}>
