@@ -4,3 +4,5 @@
 .phpunit.result.cache
 var
 *.lock
+/cli/node_modules
+/cli/dist
