@@ -2,28 +2,32 @@
 
 Interactive CLI tool built with [ink](https://github.com/vadimdemedes/ink) to configure your `spiriit_auth_log.yaml` file.
 
-## Installation
+## Quick Start
+
+### Using Makefile (recommended)
+
+From the repository root:
+
+```bash
+# Install dependencies, build, and start the CLI
+make start
+
+# Or step by step:
+make install  # Install dependencies
+make build    # Build the CLI
+make start    # Run the CLI
+```
+
+### Manual Installation
 
 ```bash
 cd cli
 npm install
-```
-
-## Usage
-
-### Run the interactive configurator
-
-```bash
+npm run build
 npm start
 ```
 
-Or directly:
-
-```bash
-node index.js
-```
-
-### What it does
+## Usage
 
 The CLI will guide you through configuring:
 

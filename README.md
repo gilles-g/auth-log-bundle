@@ -70,8 +70,13 @@ You can configure the bundle in two ways:
 Use the interactive CLI tool built with [ink](https://github.com/vadimdemedes/ink) to generate your configuration:
 
 ```bash
+# Easy way (using Makefile):
+make start
+
+# Or manually:
 cd cli
 npm install
+npm run build
 npm start
 ```
 

@@ -7,9 +7,10 @@
     "spiriit-auth-log-config": "./dist/index.js"
   },
   "scripts": {
-    "start": "node --loader=@esbuild-kit/esm-loader index.js",
-    "dev": "node --loader=@esbuild-kit/esm-loader index.js",
-    "build": "esbuild index.js --bundle --platform=node --format=esm --outfile=dist/index.js --external:react --external:ink --external:ink-text-input --external:ink-select-input --external:yaml --loader:.js=jsx --banner:js='#!/usr/bin/env node'"
+    "start": "npm run build && node dist/index.js",
+    "dev": "npm run build && node dist/index.js",
+    "build": "esbuild index.js --bundle --platform=node --format=esm --outfile=dist/index.js --external:react --external:ink --external:ink-text-input --external:ink-select-input --external:yaml --loader:.js=jsx --banner:js='#!/usr/bin/env node'",
+    "prebuild": "mkdir -p dist"
   },
   "keywords": [
     "spiriit",
@@ -28,7 +29,6 @@
     "yaml": "^2.6.1"
   },
   "devDependencies": {
-    "@esbuild-kit/esm-loader": "^2.6.5",
     "esbuild": "^0.24.2"
   }
 }
