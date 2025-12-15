@@ -1,3 +1,5 @@
+SHELL := /bin/bash
+
 .PHONY: help install start build clean test
 
 # Default target

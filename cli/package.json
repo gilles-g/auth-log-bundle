@@ -10,7 +10,7 @@
     "start": "npm run build && node dist/index.js",
     "dev": "npm run build && node dist/index.js",
     "build": "esbuild index.js --bundle --platform=node --format=esm --outfile=dist/index.js --external:react --external:ink --external:ink-text-input --external:ink-select-input --external:yaml --loader:.js=jsx --banner:js='#!/usr/bin/env node'",
-    "prebuild": "mkdir -p dist"
+    "prebuild": "node -e \"require('fs').mkdirSync('dist', { recursive: true })\""
   },
   "keywords": [
     "spiriit",
