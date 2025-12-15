@@ -1,0 +1,100 @@
+name: "CLI Tests"
+permissions:
+  contents: read
+  pull-requests: write
+
+on:
+  pull_request:
+    paths:
+      - 'cli/**'
+      - '.github/workflows/cli-test.yml'
+  push:
+    paths:
+      - 'cli/**'
+      - '.github/workflows/cli-test.yml'
+
+jobs:
+  test-cli:
+    runs-on: ubuntu-latest
+    name: Test JavaScript CLI (Node v${{ matrix.node }})
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [18, 20, 22]
+    
+    defaults:
+      run:
+        working-directory: ./cli
+
+    steps:
+      - name: "Checkout"
+        uses: "actions/checkout@v6"
+
+      - name: "Setup Node.js"
+        uses: "actions/setup-node@v4"
+        with:
+          node-version: ${{ matrix.node }}
+          cache: 'npm'
+          cache-dependency-path: cli/package-lock.json
+
+      - name: "Show Node version"
+        run: node -v && npm -v
+
+      - name: "Install dependencies"
+        run: npm ci
+
+      - name: "Build CLI"
+        run: npm run build
+
+      - name: "Verify build output"
+        run: |
+          if [ ! -f dist/index.js ]; then
+            echo "Build failed: dist/index.js not found"
+            exit 1
+          fi
+          echo "Build successful: dist/index.js created"
+          ls -lh dist/
+
+      - name: "Check for syntax errors"
+        run: node --check dist/index.js
+
+      - name: "Lint JavaScript (if eslint is configured)"
+        run: npm run lint --if-present
+        continue-on-error: true
+
+  build-validation:
+    runs-on: ubuntu-latest
+    name: Validate CLI Package
+    
+    defaults:
+      run:
+        working-directory: ./cli
+
+    steps:
+      - name: "Checkout"
+        uses: "actions/checkout@v6"
+
+      - name: "Setup Node.js"
+        uses: "actions/setup-node@v4"
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: cli/package-lock.json
+
+      - name: "Install dependencies"
+        run: npm ci
+
+      - name: "Check for outdated dependencies"
+        run: npm outdated || true
+
+      - name: "Run npm audit"
+        run: npm audit --audit-level=moderate
+        continue-on-error: true
+
+      - name: "Validate package.json"
+        run: |
+          if ! jq empty package.json 2>/dev/null; then
+            echo "Invalid package.json"
+            exit 1
+          fi
+          echo "package.json is valid JSON"

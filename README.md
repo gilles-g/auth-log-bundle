@@ -63,9 +63,32 @@ return [
 
 ## Configuration
 
-Create a configuration file `config/packages/spiriit_auth_log.yaml`:
+You can configure the bundle in two ways:
 
-### Basic Configuration
+### Interactive CLI Configuration (Recommended)
+
+Use the interactive CLI tool built with [ink](https://github.com/vadimdemedes/ink) to generate your configuration:
+
+```bash
+# Easy way (using Makefile):
+make start
+
+# Or manually:
+cd cli
+npm install
+npm run build
+npm start
+```
+
+The CLI will guide you through all configuration options and generate the `config/packages/spiriit_auth_log.yaml` file for you.
+
+![CLI Demo](https://github.com/user-attachments/assets/fe5e8863-a961-4e4b-8e83-fe9dc9904002)
+
+### Manual Configuration
+
+Alternatively, create a configuration file `config/packages/spiriit_auth_log.yaml` manually:
+
+#### Basic Configuration
 
 ```yaml
 spiriit_auth_log:
