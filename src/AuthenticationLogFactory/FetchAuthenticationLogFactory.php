@@ -12,6 +12,11 @@ namespace Spiriit\Bundle\AuthLogBundle\AuthenticationLogFactory;
 class FetchAuthenticationLogFactory
 {
     /**
+     * @var array<string, AuthenticationLogFactoryInterface>
+     */
+    private array $factoryMap = [];
+
+    /**
      * @param AuthenticationLogFactoryInterface[] $authenticationLogFactories
      */
     public function __construct(
@@ -21,12 +26,21 @@ class FetchAuthenticationLogFactory
 
     public function createFrom(string $factorySupport): AuthenticationLogFactoryInterface
     {
-        foreach ($this->authenticationLogFactories as $authenticationLogFactory) {
-            if ($factorySupport === $authenticationLogFactory->supports()) {
-                return $authenticationLogFactory;
-            }
+        if ([] === $this->factoryMap) {
+            $this->buildFactoryMap();
         }
 
-        throw new \InvalidArgumentException('There is no authentication log factory available named '.$factorySupport);
+        if (!isset($this->factoryMap[$factorySupport])) {
+            throw new \InvalidArgumentException('There is no authentication log factory available named '.$factorySupport);
+        }
+
+        return $this->factoryMap[$factorySupport];
+    }
+
+    private function buildFactoryMap(): void
+    {
+        foreach ($this->authenticationLogFactories as $authenticationLogFactory) {
+            $this->factoryMap[$authenticationLogFactory->supports()] = $authenticationLogFactory;
+        }
     }
 }

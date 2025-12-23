@@ -16,6 +16,8 @@ use Spiriit\Bundle\AuthLogBundle\FetchUserInformation\FetchUserInformationMethod
 
 class Geoip2LocateMethod implements FetchUserInformationMethodInterface
 {
+    private ?Reader $reader = null;
+
     public function __construct(
         private readonly string $geoip2DatabasePath,
     ) {
@@ -27,10 +29,12 @@ class Geoip2LocateMethod implements FetchUserInformationMethodInterface
             throw new \RuntimeException('The GeoIP extension is not installed or enabled.');
         }
 
-        $reader = new Reader($this->geoip2DatabasePath);
+        if (null === $this->reader) {
+            $this->reader = new Reader($this->geoip2DatabasePath);
+        }
 
         try {
-            $record = $reader->city($ipAddress);
+            $record = $this->reader->city($ipAddress);
 
             return new LocateValues(
                 country: $record->country->name,

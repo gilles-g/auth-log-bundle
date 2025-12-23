@@ -27,24 +27,28 @@ class IpApiLocateMethod implements FetchUserInformationMethodInterface
 
     public function locate(string $ipAddress): ?LocateValues
     {
-        $response = $this->httpClient->request('GET', 'http://ip-api.com/json/'.$ipAddress);
+        try {
+            $response = $this->httpClient->request('GET', 'http://ip-api.com/json/'.$ipAddress);
 
-        if (200 !== $response->getStatusCode()) {
+            if (200 !== $response->getStatusCode()) {
+                return null;
+            }
+
+            $data = $response->toArray();
+
+            if (self::SUCCESS !== $data['status']) {
+                return null;
+            }
+
+            return new LocateValues(
+                country: $data['country'],
+                country_code: $data['countryCode'],
+                city: $data['city'],
+                latitude: $data['lat'],
+                longitude: $data['lon']
+            );
+        } catch (\Throwable) {
             return null;
         }
-
-        $data = $response->toArray();
-
-        if (self::SUCCESS !== $data['status']) {
-            return null;
-        }
-
-        return new LocateValues(
-            country: $data['country'],
-            country_code: $data['countryCode'],
-            city: $data['city'],
-            latitude: $data['lat'],
-            longitude: $data['lon']
-        );
     }
 }
