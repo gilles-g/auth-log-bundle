@@ -9,6 +9,7 @@
 
 namespace Spiriit\Bundle\AuthLogBundle\Services;
 
+use Spiriit\Bundle\AuthLogBundle\AuthenticationLogFactory\PersistableAuthenticationLogFactoryInterface;
 use Spiriit\Bundle\AuthLogBundle\Listener\AuthenticationLogEvent;
 use Spiriit\Bundle\AuthLogBundle\Listener\AuthenticationLogEvents;
 use Spiriit\Bundle\AuthLogBundle\Notification\NotificationInterface;
@@ -24,10 +25,14 @@ class AuthenticationEventPublisher
 
     public function publish(AuthenticationContext $context): void
     {
+        if ($context->authenticationLogFactory instanceof PersistableAuthenticationLogFactoryInterface) {
+            $context->authenticationLogFactory->persist($context->userReference, $context->userInformation);
+        }
+
         $event = new AuthenticationLogEvent($context->userReference, $context->userInformation);
         $this->dispatcher->dispatch($event, AuthenticationLogEvents::NEW_DEVICE);
 
-        if (!$event->isLogHandled()) {
+        if (!$event->isLogHandled() && !$context->authenticationLogFactory instanceof PersistableAuthenticationLogFactoryInterface) {
             throw new \Exception('The event must be marked as handled by a listener.');
         }
 

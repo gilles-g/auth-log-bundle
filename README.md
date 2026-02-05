@@ -40,17 +40,9 @@ To ensure strong authentication security, this bundle aligns with guidance from 
 composer require spiriitlabs/auth-log-bundle
 ```
 
-### 2. Configure
+The bundle works out of the box with sensible defaults (sender email: `no-reply@example.com`, sender name: `Security`). You can customise these values later (see [Configuration](#configuration)).
 
-```yaml
-# config/packages/spiriit_auth_log.yaml
-spiriit_auth_log:
-    transports:
-        sender_email: 'no-reply@yourdomain.com'
-        sender_name: 'Security'
-```
-
-### 3. Implement AuthenticableLogInterface on your User
+### 2. Implement AuthenticableLogInterface on your User
 
 ```php
 use Spiriit\Bundle\AuthLogBundle\Entity\AuthenticableLogInterface;
@@ -63,7 +55,7 @@ class User implements UserInterface, AuthenticableLogInterface
 }
 ```
 
-### 4. Create your log entity
+### 3. Create your log entity
 
 ```php
 use Spiriit\Bundle\AuthLogBundle\Entity\AbstractAuthenticationLog;
@@ -85,14 +77,22 @@ class UserAuthLog extends AbstractAuthenticationLog
 }
 ```
 
-### 5. Create the factory
+### 4. Create the factory
+
+The factory tells the bundle how to look up users, check whether a device is already known, and (optionally) persist new log entries.
+
+**Recommended — use `PersistableAuthenticationLogFactoryInterface`:**
+
+By implementing `PersistableAuthenticationLogFactoryInterface`, the bundle will automatically persist the log entry for you. No separate event listener is needed.
 
 ```php
-use Spiriit\Bundle\AuthLogBundle\AuthenticationLogFactory\AuthenticationLogFactoryInterface;
+use Spiriit\Bundle\AuthLogBundle\AuthenticationLogFactory\PersistableAuthenticationLogFactoryInterface;
 
-class UserAuthLogFactory implements AuthenticationLogFactoryInterface
+class UserAuthLogFactory implements PersistableAuthenticationLogFactoryInterface
 {
     public function __construct(private EntityManagerInterface $em) {}
+
+    public function supports(): string { return 'user'; } // must match getAuthenticationLogFactoryName()
 
     public function createUserReference(string $userIdentifier): UserReference
     {
@@ -109,11 +109,21 @@ class UserAuthLogFactory implements AuthenticationLogFactoryInterface
             ->getQuery()->getOneOrNullResult();
     }
 
-    public function supports(): string { return 'user'; } // must match getAuthenticationLogFactoryName()
+    public function persist(UserReference $ref, UserInformation $info): void
+    {
+        $user = $this->em->getRepository(User::class)->find($ref->id);
+        $log = new UserAuthLog($user, $info);
+        $this->em->persist($log);
+        $this->em->flush();
+    }
 }
 ```
 
-### 6. Listen to the event
+That's it — **4 steps** and the bundle is fully operational.
+
+### Advanced: using a custom event listener instead
+
+If you need more control, you can implement `AuthenticationLogFactoryInterface` (without `persist()`) and register your own event listener. In that case, your listener **must** call `$event->markAsHandled()`:
 
 ```php
 use Spiriit\Bundle\AuthLogBundle\Listener\{AuthenticationLogEvent, AuthenticationLogEvents};
@@ -133,10 +143,19 @@ class AuthLogListener implements EventSubscriberInterface
         $log = new UserAuthLog($user, $event->getUserInformation());
         $this->em->persist($log);
         $this->em->flush();
-         // persist log or custom process
         $event->markAsHandled(); // Required to continue the notification process
     }
 }
+```
+
+## Configuration
+
+```yaml
+# config/packages/spiriit_auth_log.yaml
+spiriit_auth_log:
+    transports:
+        sender_email: 'no-reply@yourdomain.com'   # default: no-reply@example.com
+        sender_name: 'Your App Security'           # default: Security
 ```
 
 ## Options

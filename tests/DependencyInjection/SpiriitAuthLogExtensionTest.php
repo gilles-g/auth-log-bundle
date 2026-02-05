@@ -10,69 +10,55 @@
 namespace Spiriit\Bundle\Tests\DependencyInjection;
 
 use PHPUnit\Framework\TestCase;
-use Spiriit\Bundle\AuthLogBundle\DependencyInjection\SpiriitAuthLogExtension;
-use Spiriit\Bundle\AuthLogBundle\SpiriitAuthLogBundle;
-use Spiriit\Bundle\Tests\Integration\Stubs\Kernel;
-use Symfony\Bundle\FrameworkBundle\DependencyInjection\FrameworkExtension;
-use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
-use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
-use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\DependencyInjection\ParameterBag\ParameterBag;
+use Spiriit\Bundle\AuthLogBundle\DependencyInjection\Configuration;
+use Symfony\Component\Config\Definition\Processor;
 
 class SpiriitAuthLogExtensionTest extends TestCase
 {
-    public function testEmptyConfiguration(): void
+    /**
+     * Verify that when no transports block is provided,
+     * the bundle falls back to sensible defaults so that
+     * users can get started without creating a config file.
+     */
+    public function testEmptyConfigurationUsesDefaults(): void
     {
-        $container = $this->createContainer([
-            'framework' => [
-                'secret' => 'testing',
-            ],
-            'spiriit_auth_log' => [],
-        ]);
+        $resolved = $this->resolveConfig([]);
 
-        self::expectException(InvalidConfigurationException::class);
-        self::expectExceptionMessage('The child config "transports" under "spiriit_auth_log" must be configured.');
-
-        $container->compile();
+        self::assertSame('no-reply@example.com', $resolved['transports']['sender_email']);
+        self::assertSame('Security', $resolved['transports']['sender_name']);
+        self::assertSame('mailer', $resolved['transports']['mailer']);
+        self::assertFalse($resolved['messenger']);
     }
 
-    private function createContainer(array $configs = []): ContainerBuilder
+    /**
+     * Verify that user-supplied values still take precedence
+     * over the built-in defaults.
+     */
+    public function testCustomTransportsOverrideDefaults(): void
     {
-        $container = new ContainerBuilder(new ParameterBag([
-            'kernel.bundles_metadata' => [],
-            'kernel.cache_dir' => __DIR__,
-            'kernel.debug' => false,
-            'kernel.environment' => 'test',
-            'kernel.name' => 'kernel',
-            'kernel.root_dir' => __DIR__,
-            'kernel.project_dir' => __DIR__,
-            'kernel.container_class' => 'AutowiringTestContainer',
-            'kernel.charset' => 'utf8',
-            'kernel.runtime_environment' => 'test',
-            'env(base64:default::SYMFONY_DECRYPTION_SECRET)' => 'dummy',
-            'kernel.build_dir' => __DIR__,
-            'debug.file_link_format' => null,
-            'env(bool:default::SYMFONY_TRUST_X_SENDFILE_TYPE_HEADER)' => true,
-            'env(default::SYMFONY_TRUSTED_HOSTS)' => [],
-            'env(default::SYMFONY_TRUSTED_PROXIES)' => [],
-            'env(default::SYMFONY_TRUSTED_HEADERS)' => [],
-            'kernel.bundles' => [
-                'FrameworkBundle' => FrameworkBundle::class,
-                'SpiriitAuthLogBundle' => SpiriitAuthLogBundle::class,
+        $resolved = $this->resolveConfig([
+            'transports' => [
+                'sender_email' => 'alerts@myapp.io',
+                'sender_name' => 'My App',
             ],
-        ]));
+        ]);
 
-        $container->set('kernel', function (): Kernel {
-            return new Kernel('test', false);
-        });
+        self::assertSame('alerts@myapp.io', $resolved['transports']['sender_email']);
+        self::assertSame('My App', $resolved['transports']['sender_name']);
+    }
 
-        $container->registerExtension(new FrameworkExtension());
-        $container->registerExtension(new SpiriitAuthLogExtension());
-
-        foreach ($configs as $extension => $config) {
-            $container->loadFromExtension($extension, $config);
-        }
-
-        return $container;
+    /**
+     * Helper: run the bundle Configuration tree against
+     * a single user-provided config array.
+     *
+     * @param array<string, mixed> $userConfig
+     * @return array<string, mixed>
+     */
+    private function resolveConfig(array $userConfig): array
+    {
+        return (new Processor())->processConfiguration(
+            new Configuration(),
+            [$userConfig],
+        );
     }
 }

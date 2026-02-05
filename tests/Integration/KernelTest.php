@@ -42,6 +42,20 @@ class KernelTest extends KernelTestCase
         return new KernelStub('test', true, $options['config'] ?? 'base');
     }
 
+    public function testLoadedDefaultConfig(): void
+    {
+        self::bootKernel(['config' => 'default']);
+
+        $config = self::getContainer()->getParameter('spiriit_auth_log.config');
+
+        self::assertArrayHasKey('transports', $config);
+        self::assertSame('no-reply@example.com', $config['transports']['sender_email']);
+        self::assertSame('Security', $config['transports']['sender_name']);
+        self::assertInstanceOf(MailerInterface::class, self::getContainer()->get('spiriit_auth_log.transports.mailer'));
+        self::assertInstanceOf(FetchUserInformation::class, self::getContainer()->get('spiriit_auth_log.fetch_user_information'));
+        self::assertInstanceOf(MailerNotification::class, self::getContainer()->get('spiriit_auth_log.notification'));
+    }
+
     public function testLoadedMinimalConfig(): void
     {
         self::bootKernel(['config' => 'minimal']);
