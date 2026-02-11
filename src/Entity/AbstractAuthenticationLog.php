@@ -63,7 +63,7 @@ abstract class AbstractAuthenticationLog
 
     public function getLocation(): ?LocateValues
     {
-        if (!empty($this->location)) {
+        if (empty($this->location)) {
             return null;
         }
 

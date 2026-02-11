@@ -38,7 +38,6 @@ class LoginListener
 
         $request = $event->getRequest();
 
-        /** @var UserInterface&AuthenticableLogInterface $user */
         $loginParameterDto = new LoginParameterDto(
             factoryName: $user->getAuthenticationLogFactoryName(),
             userIdentifier: $user->getUserIdentifier(),
@@ -50,7 +49,7 @@ class LoginListener
 
         if (null === $this->bus) {
             $this->loginService->execute($loginParameterDto);
-        } elseif ($this->bus instanceof MessageBusInterface) {
+        } else {
             $this->bus->dispatch(new AuthLoginMessage($loginParameterDto));
         }
     }

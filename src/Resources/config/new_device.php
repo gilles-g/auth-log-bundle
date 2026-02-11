@@ -58,5 +58,9 @@ return static function (ContainerConfigurator $container): void {
 
     $services->set('spiriit_auth_log.http_client', HttpClientInterface::class)
         ->factory([HttpClient::class, 'create'])
+        ->args([[
+            'timeout' => 5,
+            'max_duration' => 10,
+        ]])
         ->tag('http_client.client');
 };
