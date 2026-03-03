@@ -11,15 +11,20 @@ declare(strict_types=1);
 
 namespace Spiriit\Bundle\Tests\Integration;
 
+use Spiriit\Bundle\AuthLogBundle\AuthenticationLog\DoctrineAuthenticationLogHandler;
 use Spiriit\Bundle\AuthLogBundle\FetchUserInformation\FetchUserInformation;
 use Spiriit\Bundle\AuthLogBundle\FetchUserInformation\LocateUserInformation\Geoip2LocateMethod;
 use Spiriit\Bundle\AuthLogBundle\FetchUserInformation\LocateUserInformation\IpApiLocateMethod;
+use Spiriit\Bundle\AuthLogBundle\Listener\LoginListener;
 use Spiriit\Bundle\AuthLogBundle\Notification\MailerNotification;
+use Spiriit\Bundle\AuthLogBundle\Services\LoginService;
 use Spiriit\Bundle\Tests\Integration\Stubs\Kernel as KernelStub;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Mailer\MailerInterface;
+use Symfony\Component\Security\Http\Event\LoginSuccessEvent;
 
 class KernelTest extends KernelTestCase
 {
@@ -89,5 +94,55 @@ class KernelTest extends KernelTestCase
 
         self::assertArrayHasKey('messenger', $config);
         self::assertTrue(self::getContainer()->has('spiriit_auth_log.login_message_handler'));
+    }
+
+    public function testLoginListenerIsRegisteredAsService(): void
+    {
+        self::bootKernel(['config' => 'minimal']);
+
+        self::assertTrue(self::getContainer()->has('spiriit_auth_log.login_listener'));
+        self::assertInstanceOf(LoginListener::class, self::getContainer()->get('spiriit_auth_log.login_listener'));
+    }
+
+    public function testLoginListenerIsRegisteredAsEventListener(): void
+    {
+        self::bootKernel(['config' => 'minimal']);
+
+        /** @var EventDispatcher $dispatcher */
+        $dispatcher = self::getContainer()->get('event_dispatcher');
+        $listeners = $dispatcher->getListeners(LoginSuccessEvent::class);
+
+        $found = false;
+        foreach ($listeners as $listener) {
+            if (\is_array($listener) && $listener[0] instanceof LoginListener) {
+                $found = true;
+                break;
+            }
+        }
+
+        self::assertTrue($found, 'LoginListener should be registered as a listener for LoginSuccessEvent');
+    }
+
+    public function testLoginServiceIsRegistered(): void
+    {
+        self::bootKernel(['config' => 'minimal']);
+
+        self::assertTrue(self::getContainer()->has('spiriit_auth_log.login_service'));
+        self::assertInstanceOf(LoginService::class, self::getContainer()->get('spiriit_auth_log.login_service'));
+    }
+
+    public function testHandlerIsRegistered(): void
+    {
+        self::bootKernel(['config' => 'minimal']);
+
+        self::assertTrue(self::getContainer()->has('spiriit_auth_log.handler'));
+        self::assertInstanceOf(DoctrineAuthenticationLogHandler::class, self::getContainer()->get('spiriit_auth_log.handler'));
+    }
+
+    public function testEventDispatcherAliasIsRegistered(): void
+    {
+        self::bootKernel(['config' => 'minimal']);
+
+        self::assertTrue(self::getContainer()->has('spiriit_auth_log.login_event_dispatcher'));
     }
 }
