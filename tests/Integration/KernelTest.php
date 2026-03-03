@@ -232,14 +232,9 @@ class KernelTest extends KernelTestCase
     {
         self::bootKernel(['config' => 'location_ipapi']);
 
-        $fetchUserInformation = self::getContainer()->get('spiriit_auth_log.fetch_user_information');
-
-        self::assertInstanceOf(FetchUserInformation::class, $fetchUserInformation);
-
-        $reflection = new \ReflectionClass($fetchUserInformation);
-        $property = $reflection->getProperty('fetchUserInformationMethod');
-        $property->setAccessible(true);
-
-        self::assertInstanceOf(IpApiLocateMethod::class, $property->getValue($fetchUserInformation));
+        self::assertTrue(self::getContainer()->has('spiriit_auth_log.fetch_user_information'));
+        self::assertTrue(self::getContainer()->has('spiriit_auth_log.fetch_user_information_method'));
+        self::assertInstanceOf(FetchUserInformation::class, self::getContainer()->get('spiriit_auth_log.fetch_user_information'));
+        self::assertInstanceOf(IpApiLocateMethod::class, self::getContainer()->get('spiriit_auth_log.fetch_user_information_method'));
     }
 }
