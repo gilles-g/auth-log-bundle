@@ -13,6 +13,7 @@ This helps detect unusual login activity early and increases visibility into aut
 [![Symfony](https://img.shields.io/badge/symfony-6.4%2B%7C7.4%2B%7C8.0%2B-blue.svg)](https://symfony.com)
 [![Latest Stable Version](https://poser.pugx.org/spiriitlabs/auth-log-bundle/v/stable.svg)](https://packagist.org/packages/spiriitlabs/auth-log-bundle)
 [![CI Tests](https://github.com/SpiriitLabs/auth-log-bundle/actions/workflows/ci.yml/badge.svg)](https://github.com/SpiriitLabs/auth-log-bundle/actions/workflows/ci.yml)
+[![Code Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)](https://github.com/SpiriitLabs/auth-log-bundle/actions/workflows/ci.yml)
 
 > **Upgrading from v1?** See the [UPGRADE.md](UPGRADE.md) guide for a step-by-step migration.
 
@@ -33,6 +34,7 @@ To ensure strong authentication security, this bundle aligns with guidance from 
 - **Messenger Integration**: Optional async processing with Symfony Messenger
 - **Repository-Based Persistence**: No factory or listener boilerplate — implement two interfaces in your repository and you're done
 - **Extensible**: Replace the default email notification with any custom transport via `NotificationInterface`
+- **CI Verified**: 100% code coverage enforced, container lint tested across PHP 8.2–8.4 and Symfony 6.4–8.0
 
 ## Getting Started
 
@@ -153,6 +155,21 @@ class UserAuthLogRepository extends EntityRepository implements
 That's it! The bundle automatically listens to `LoginSuccessEvent`, checks if the login context is known, persists the log, and sends a notification email when a new context is detected.
 
 ## Options
+
+### Full Configuration Reference
+
+```yaml
+# config/packages/spiriit_auth_log.yaml
+spiriit_auth_log:
+    messenger: false                          # false (default) or service ID e.g. 'messenger.default_bus'
+    transports:
+        mailer: 'mailer'                      # 'mailer' (default) or custom service ID
+        sender_email: 'no-reply@yourdomain.com' # required
+        sender_name: 'Security'               # required
+    location:                                 # optional — omit to disable geolocation
+        provider: ~                           # 'ipApi' or 'geoip2'
+        geoip2_database_path: ~               # required when provider is 'geoip2'
+```
 
 ### Geolocation
 
@@ -281,6 +298,28 @@ composer cs-check          # Check code style (dry-run)
 composer cs-fix            # Fix code style
 vendor/bin/phpstan analyse # Static analysis
 ```
+
+### Test Coverage
+
+The CI enforces **100% line coverage** on every push and pull request. Coverage is computed via Xdebug + clover XML analysis.
+
+To generate a coverage report locally:
+
+```bash
+XDEBUG_MODE=coverage vendor/bin/simple-phpunit --coverage-text
+```
+
+### Container Lint Verification
+
+The test suite includes a **container lint smoke test** (`ContainerLintTest`) that mirrors what `bin/console lint:container` does in a real Symfony project.
+
+It boots the kernel with every supported configuration variant (minimal, IP API geolocation, GeoIP2 geolocation, Messenger async, custom notification) and verifies that:
+
+- The DI container compiles without errors
+- All bundle services are instantiable (no missing declarations, broken references, or circular dependencies)
+- Full dependency chains resolve correctly (e.g. `LoginService` → `FetchUserInformation` / `DoctrineAuthenticationLogHandler` / `NotificationInterface` / `EventDispatcher`)
+
+This guarantees the bundle will install and boot on a Symfony project without runtime DI errors.
 
 ## Contributing
 
